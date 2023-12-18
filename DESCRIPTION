@@ -1,0 +1,32 @@
+Package: ckviz
+Type: Package
+Title: Vizualize CKMR Kinship Probabilites in Age-Structured Populations
+Version: 0.1.0.999
+Authors@R:
+  c(
+    person(given = c("Eric", "C."), "Anderson", , "eric.anderson@noaa.gov", role = c("aut", "cre"),
+      comment = c(ORCID = "0000-0003-1326-0840")
+    )
+  )
+Maintainer: <eric.anderson@noaa.gov>
+Description: A small package with a few functions for helping to vizualize,
+    understand, and teach the derivation of kinship probabilities for close-kin
+    mark-recapture.
+License: CC0
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 3.5.0)
+Imports:
+    dplyr,
+    ggplot2,
+    latex2exp,
+    magrittr,
+    purrr,
+    tibble,
+    tidyr
+Suggests:
+    knitr
+VignetteBuilder: knitr
+RoxygenNote: 7.2.3
