@@ -95,6 +95,31 @@ make_survival_segpoints <- function(E, P) {
 }
 
 
+# here is function to make a squiggly arrow
+make_squiggly_arrow_df <- function(x0, y0, x1, y1,
+                                   n_cycles = 3,
+                                   amplitude = 0.1,
+                                   n_points = 500) {
+  # Direction vector from start to end
+  dx <- x1 - x0
+  dy <- y1 - y0
+  length <- sqrt(dx^2 + dy^2)
+
+  # Normal (perpendicular) unit vector
+  nx <- -dy / length
+  ny <- dx / length
+
+  # Parametric position along the main line
+  t <- seq(0, 1, length.out = n_points)
+
+  # Add sinusoidal offset in the perpendicular direction
+  x <- x0 + dx * t + amplitude * -sin(2 * pi * n_cycles * t) * nx
+  y <- y0 + dy * t + amplitude * -sin(2 * pi * n_cycles * t) * ny
+
+  data.frame(x = x, y = y)
+}
+
+
 #' Given an Eft-like tibble, make a plot displaying CKMR-related elements
 #'
 #' Mostly this is to do a function that lets us quickly plot things with
@@ -112,12 +137,28 @@ make_survival_segpoints <- function(E, P) {
 #' endpoints of the desired survival lines.
 #' @param circ_cells a tibble with columns t and a giving the cells that should
 #' have the little sampling circle in them
+#' @param dcirc_cells a tibble with columns t and a giving the cells that should
+#' have the little double-sampling circle (that denotes sampling a pair from the offspring) in them
+#' @param dcirc_small Size of the small circle inside the dcirc.  Default = 1.5
+#' @param dcirc_big Size of the big circle inside the dcirc.  Default = 3.0
+#' @param sample_squiggle a tibble in which each row represents a single sampled individual.
+#' The columns are  b (the birth year), ts (the sampling year), col (the color you want the
+#' squiggle to be as a string)
+#' @param samp_squig_ystart the y-value at which we place the newborn samples for the squiggles.
+#' @param samp_squig_fract the fraction of vertical space that a year takes up in the sample squiggle
+#' area.
+#' @param aas_text_size the size of the "age at sampling" text if sample squiggle is not null.
+#' @param aas_num_size the size of the age at sampling numbers if sample squiggle is not null.
 #' @export
 #' @examples
-#' t <- 3:6
-#' cm <- tibble::tibble(t = t, a = t+1)
-#' cm2 <- tidyr::expand_grid(t = c(4, 7), a = 1:8)
+#' vitals <- example_vitals()
+#' set.seed(5)
+#' E <- create_Es_from_vitals(vitals = vitals, T = 15)
+#' plot_ckmr_pictorial(E, cell_str_var = "N")
 #'
+#' ss <- tibble(b = c(3, 5), ts = c(6, 12), col = c("red", "blue"))
+#'
+#' plot_ckmr_pictorial(E, cell_str_var = "N", sample_squiggle = ss)
 plot_ckmr_pictorial <- function(
     E,
     cell_fill_var = "Eft",
@@ -126,13 +167,27 @@ plot_ckmr_pictorial <- function(
     max_fill = NA,
     cell_mask = NULL,
     survival_endpoints = NULL,
-    circ_cells = NULL
+    circ_cells = NULL,
+    dcirc_cells = NULL,
+    dcirc_small = 1.5,
+    dcirc_big = 3.0,
+    sample_squiggle = NULL,
+    samp_squig_ystart = -0.1,
+    samp_squig_fract = 0.3,
+    aas_text_size = 2.5,
+    aas_num_size = 2.5
 ) {
 
 
   # get some line positions
   as <- unique(c(E$a - 0.5, E$a + 0.5))
   ts <- unique(c(E$t - 0.5, E$t + 0.5))
+
+  ts_tib <- tibble(
+    ts = ts,
+    yhi = max(as),
+    ylo = min(as)
+  )
 
 
   # do the cell masking here:
@@ -159,7 +214,7 @@ plot_ckmr_pictorial <- function(
       size = 7/.pt
     ) +
     geom_hline(yintercept = as) +
-    geom_vline(xintercept = ts) +
+    geom_segment(data = ts_tib, mapping = aes(x = ts, xend = ts, y = yhi, yend = ylo)) +
     scale_fill_viridis_c(option = "H", alpha = 0.6, na.value = NA, limits = c(min_fill, max_fill)) +
     theme_void() +
     coord_cartesian(expand = FALSE)
@@ -195,10 +250,97 @@ plot_ckmr_pictorial <- function(
         fill = NA,
         stroke = 0.2
       )
-
-
   }
 
+  if(!is.null(dcirc_cells)) {
+    g <- g +
+      geom_point(
+        data = dcirc_cells,
+        mapping = aes(x = t - 0.3, y = a + 0.3),
+        shape = 21,
+        fill = NA,
+        stroke = 0.2,
+        size = dcirc_small
+      ) +
+      geom_point(
+        data = dcirc_cells,
+        mapping = aes(x = t - 0.3, y = a + 0.3),
+        shape = 21,
+        fill = NA,
+        stroke = 0.2,
+        size = dcirc_big
+      )
+  }
+
+  if(!is.null(sample_squiggle)) {
+    # recalculate the positions
+    ss2 <- sample_squiggle %>%
+      mutate(
+        diff = ts - b,
+        start_x = b,
+        end_x = ts,
+        start_y = samp_squig_ystart,
+        end_y = start_y - diff * samp_squig_fract
+      )
+    # this is the furthest down line we need
+    max_squig <- max(ss2$diff)
+
+    # get the ts_tib values we need
+    tt2 <- ts_tib %>%
+      mutate(
+        yhi = samp_squig_ystart,
+        ylo = yhi - max_squig * samp_squig_fract
+      )
+    # get a tibble for some annotation text to fit in on the end
+    aas_tib <- tibble(
+      x1 = max(ts) - 0.5,
+      x2 = max(ts),
+      y1 = samp_squig_ystart,
+      y2 = samp_squig_ystart - max_squig * samp_squig_fract,
+      label = "age at sampling"
+    )
+    aas_nums <- tibble(
+      y = samp_squig_ystart - (0:max_squig) * samp_squig_fract
+    ) %>%
+      mutate(
+        x = min(as) + 0.1,
+        label = 0:(n() - 1)
+      )
+
+    # make a tibble for the squiggly arrows
+    arrows_tib <- ss2 %>%
+      mutate(data = pmap(
+        .l = list(
+          x0 = start_x,
+          x1 = end_x,
+          y0 = start_y,
+          y1 = end_y,
+          n_cycles = ceiling(sqrt( (end_x - start_x) ^ 2 + (end_y - start_y) ^ 2) * 2)  # two cycles per unit of arrow length
+        ),
+        .f = make_squiggly_arrow_df
+      )
+    ) %>%
+      unnest(cols = data)
+
+
+    g <- g +
+      geom_hline(yintercept = samp_squig_ystart - (0:max_squig) * samp_squig_fract, linetype = "dotted") +
+      geom_segment(data = tt2, mapping = aes(x = ts, xend = ts, y = yhi, yend = ylo), linetype = "dotted") +
+      geom_text(data = aas_tib, mapping = aes(x = x1,  y = y1, label = label), angle = -90, hjust = "left", vjust = 0.5, size = aas_text_size) +
+      geom_text(data = aas_nums, mapping = aes(x = x, y = y, label = label), hjust = "left", vjust = 0.5, size = aas_num_size) +
+      geom_path(
+        data = arrows_tib,
+        mapping = aes(x = x, y = y, color = col),
+        linewidth = 1
+      ) +
+      scale_color_identity() +
+      geom_point(
+        data = ss2,
+        mapping = aes(x = mean(ts), y = end_y - 1.5/diff),  # add an invisible point to expand the plot area
+        shape = 1,
+        alpha = 0
+      )
+  }
   g
 
 }

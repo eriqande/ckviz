@@ -12,7 +12,15 @@ plot_ckmr_pictorial(
   max_fill = NA,
   cell_mask = NULL,
   survival_endpoints = NULL,
-  circ_cells = NULL
+  circ_cells = NULL,
+  dcirc_cells = NULL,
+  dcirc_small = 1.5,
+  dcirc_big = 3,
+  sample_squiggle = NULL,
+  samp_squig_ystart = -0.1,
+  samp_squig_fract = 0.3,
+  aas_text_size = 2.5,
+  aas_num_size = 2.5
 )
 }
 \arguments{
@@ -36,14 +44,38 @@ endpoints of the desired survival lines.}
 
 \item{circ_cells}{a tibble with columns t and a giving the cells that should
 have the little sampling circle in them}
+
+\item{dcirc_cells}{a tibble with columns t and a giving the cells that should
+have the little double-sampling circle (that denotes sampling a pair from the offspring) in them}
+
+\item{dcirc_small}{Size of the small circle inside the dcirc.  Default = 1.5}
+
+\item{dcirc_big}{Size of the big circle inside the dcirc.  Default = 3.0}
+
+\item{sample_squiggle}{a tibble in which each row represents a single sampled individual.
+The columns are  b (the birth year), ts (the sampling year), col (the color you want the
+squiggle to be as a string)}
+
+\item{samp_squig_ystart}{the y-value at which we place the newborn samples for the squiggles.}
+
+\item{samp_squig_fract}{the fraction of vertical space that a year takes up in the sample squiggle
+area.}
+
+\item{aas_text_size}{the size of the "age at sampling" text if sample squiggle is not null.}
+
+\item{aas_num_size}{the size of the age at sampling numbers if sample squiggle is not null.}
 }
 \description{
 Mostly this is to do a function that lets us quickly plot things with
 only certain cells filled, etc.
 }
 \examples{
-t <- 3:6
-cm <- tibble::tibble(t = t, a = t+1)
-cm2 <- tidyr::expand_grid(t = c(4, 7), a = 1:8)
+vitals <- example_vitals()
+set.seed(5)
+E <- create_Es_from_vitals(vitals = vitals, T = 15)
+plot_ckmr_pictorial(E, cell_str_var = "N")
 
+ss <- tibble(b = c(3, 5), ts = c(6, 12), col = c("red", "blue"))
+
+plot_ckmr_pictorial(E, cell_str_var = "N", sample_squiggle = ss)
 }
