@@ -147,6 +147,7 @@ make_squiggly_arrow_df <- function(x0, y0, x1, y1,
 #' @param samp_squig_ystart the y-value at which we place the newborn samples for the squiggles.
 #' @param samp_squig_fract the fraction of vertical space that a year takes up in the sample squiggle
 #' area.
+#' @param squig_width the linewidth of the sample-squiggle path
 #' @param aas_text_size the size of the "age at sampling" text if sample squiggle is not null.
 #' @param aas_num_size the size of the age at sampling numbers if sample squiggle is not null.
 #' @export
@@ -156,7 +157,7 @@ make_squiggly_arrow_df <- function(x0, y0, x1, y1,
 #' E <- create_Es_from_vitals(vitals = vitals, T = 15)
 #' plot_ckmr_pictorial(E, cell_str_var = "N")
 #'
-#' ss <- tibble(b = c(3, 5), ts = c(6, 12), col = c("red", "blue"))
+#' ss <- tibble::tibble(b = c(3, 5), ts = c(6, 12), col = c("red", "blue"))
 #'
 #' plot_ckmr_pictorial(E, cell_str_var = "N", sample_squiggle = ss)
 plot_ckmr_pictorial <- function(
@@ -174,8 +175,9 @@ plot_ckmr_pictorial <- function(
     sample_squiggle = NULL,
     samp_squig_ystart = -0.1,
     samp_squig_fract = 0.3,
-    aas_text_size = 2.5,
-    aas_num_size = 2.5
+    squig_width = 0.5,
+    aas_text_size = 2.0,
+    aas_num_size = 2.0
 ) {
 
 
@@ -331,7 +333,7 @@ plot_ckmr_pictorial <- function(
       geom_path(
         data = arrows_tib,
         mapping = aes(x = x, y = y, color = col),
-        linewidth = 1
+        linewidth = squig_width
       ) +
       scale_color_identity() +
       geom_point(

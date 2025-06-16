@@ -19,8 +19,9 @@ plot_ckmr_pictorial(
   sample_squiggle = NULL,
   samp_squig_ystart = -0.1,
   samp_squig_fract = 0.3,
-  aas_text_size = 2.5,
-  aas_num_size = 2.5
+  squig_width = 0.5,
+  aas_text_size = 2,
+  aas_num_size = 2
 )
 }
 \arguments{
@@ -61,6 +62,8 @@ squiggle to be as a string)}
 \item{samp_squig_fract}{the fraction of vertical space that a year takes up in the sample squiggle
 area.}
 
+\item{squig_width}{the linewidth of the sample-squiggle path}
+
 \item{aas_text_size}{the size of the "age at sampling" text if sample squiggle is not null.}
 
 \item{aas_num_size}{the size of the age at sampling numbers if sample squiggle is not null.}
@@ -75,7 +78,7 @@ set.seed(5)
 E <- create_Es_from_vitals(vitals = vitals, T = 15)
 plot_ckmr_pictorial(E, cell_str_var = "N")
 
-ss <- tibble(b = c(3, 5), ts = c(6, 12), col = c("red", "blue"))
+ss <- tibble::tibble(b = c(3, 5), ts = c(6, 12), col = c("red", "blue"))
 
 plot_ckmr_pictorial(E, cell_str_var = "N", sample_squiggle = ss)
 }
